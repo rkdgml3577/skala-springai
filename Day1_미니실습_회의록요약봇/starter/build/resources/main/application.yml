@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+# ── 이 세 줄이 실습에서 손대는 설정 전부이다 ──────────────────
+app:
+  provider: openai        # openai | ollama — 공급자를 바꾸는 유일한 자리
+  temperature: 0.2        # 요약은 편차가 작아야 하므로 낮게 둔다
+  max-sentences: 3        # 요약 길이
+
+spring:
+  application:
+    name: meeting-minutes
+
+  ai:
+    # OpenAI — 키는 환경변수로만 받는다. 값이 없으면 빈 문자열이라 기동은 된다.
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-4o-mini
+      connect-timeout: 10s
+      read-timeout: 60s
+
+    # Ollama — 키 없이 로컬에서 돈다. ollama pull qwen3.5:2b 를 먼저 해 둔다.
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: qwen3.5:2b
+
+logging:
+  level:
+    com.skala.minutes: DEBUG
+
+---
+# ./gradlew bootRun --args='--spring.profiles.active=local'  → 키 없이 Ollama 로 실행
+spring:
+  config:
+    activate:
+      on-profile: local
+app:
+  provider: ollama

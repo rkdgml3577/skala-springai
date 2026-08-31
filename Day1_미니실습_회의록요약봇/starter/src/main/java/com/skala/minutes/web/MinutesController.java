@@ -57,7 +57,10 @@ public class MinutesController {
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> stream(@Valid @RequestBody MinutesRequest req) {
         return minutesService.streamSummary(req.text())
-                .map(chunk -> ServerSentEvent.builder(chunk).event("token").build());
-        // TODO ④ 여기에 done 이벤트와 error 이벤트를 붙인다
+                .map(chunk -> ServerSentEvent.builder(chunk).event("token").build())
+                .concatWith(Mono.just(ServerSentEvent.<String>builder()
+                        .event("done").data("").build()))
+                .onErrorResume(e -> Mono.just(ServerSentEvent.<String>builder()
+                        .event("error").data(e.getMessage()).build()));
     }
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="STEP 2 · 구조화 출력으로 받는다" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-31T07:22:10.874Z" hostname="choeganghuiui-MacBookPro.local" time="0.04">
+  <properties/>
+  <testcase name="정리용_프롬프트를_쓴다()" classname="com.skala.minutes.StepTests$STEP2" time="0.029"/>
+  <testcase name="담당자별_할_일이_채워진다()" classname="com.skala.minutes.StepTests$STEP2" time="0.004"/>
+  <testcase name="JSON_을_객체로_받는다()" classname="com.skala.minutes.StepTests$STEP2" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -31,6 +31,7 @@ public class AiConfig {
                 .defaultOptions(ChatOptions.builder()
                         .temperature(temperature)
                         .build())
+                .defaultAdvisors(new TokenUsageAdvisor())   // 모든 호출의 토큰을 자동으로 기록한다
                 .build();
     }
 }
