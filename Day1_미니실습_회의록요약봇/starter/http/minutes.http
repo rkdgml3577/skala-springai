@@ -1,0 +1,20 @@
+### 0) 뼈대 확인 — 모델을 부르지 않는다
+GET http://localhost:8080/api/minutes/ping
+
+### 1) STEP 1 — 한 문단 요약
+POST http://localhost:8080/api/minutes/summary
+Content-Type: application/json
+
+{ "text": "김지훈: 결제 취소 API 타임아웃을 10초로 줄이고 재시도 두 번으로 간다. 이도현이 수요일까지 반영한다." }
+
+### 2) STEP 2 — 구조화 출력
+POST http://localhost:8080/api/minutes/report
+Content-Type: application/json
+
+{ "text": "김지훈: 결제 취소 API 타임아웃을 10초로 줄이고 재시도 두 번으로 간다. 이도현이 수요일까지 반영한다. 최민수는 8월 29일까지 온보딩 1차 화면을 올린다." }
+
+### 3) STEP 3 — 스트리밍 (curl 로 볼 때는 -N 을 붙인다)
+POST http://localhost:8080/api/minutes/stream
+Content-Type: application/json
+
+{ "text": "김지훈: 결제 취소 API 타임아웃을 10초로 줄이고 재시도 두 번으로 간다." }
