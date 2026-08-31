@@ -18,6 +18,9 @@ spring:
       chat:
         options:
           model: gpt-4o-mini
+          # 스트리밍은 기본적으로 토큰 사용량을 안 보내 준다.
+          # 켜면 마지막에 usage 만 담긴 조각을 하나 더 보내 준다.
+          stream-usage: true
       connect-timeout: 10s
       read-timeout: 60s
 

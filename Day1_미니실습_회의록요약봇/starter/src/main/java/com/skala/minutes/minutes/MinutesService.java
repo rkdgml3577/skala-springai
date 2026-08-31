@@ -1,11 +1,19 @@
 package com.skala.minutes.minutes;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.retry.TransientAiException;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 /**
  * 여기가 오늘의 작업장이다. TODO ① ② ③ 세 군데를 채운다.
@@ -18,6 +26,8 @@ import reactor.core.publisher.Flux;
  */
 @Service
 public class MinutesService {
+
+    private static final Logger log = LoggerFactory.getLogger(MinutesService.class);
 
 
     private final ChatClient chat;
@@ -56,6 +66,9 @@ public class MinutesService {
      *
      * 통과 기준 : STEP 1 테스트 4개가 초록이 된다.
      */
+    @Retryable(retryFor = TransientAiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000))
     public String summarize(String minutes) {
         ChatResponse response = chat.prompt()
                 .system(s -> s.text(summaryPrompt)
@@ -97,6 +110,9 @@ public class MinutesService {
      *
      * 통과 기준 : STEP 2 테스트 3개가 초록이 된다.
      */
+    @Retryable(retryFor = TransientAiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000))
     public MeetingReport report(String minutes) {
         return chat.prompt()
                 .system(s -> s.text(reportPrompt))
@@ -127,22 +143,26 @@ public class MinutesService {
     }
 
     // ══ STEP 5 (선택) ════════════════════════════════════════════════════
-    // 여기까지 오면 오늘 목표를 넘긴 것이다. 시간이 남을 때만 한다.
-    //
-    // summarize() 와 report() 에 재시도를 건다.
-    //
-    // @Retryable(retryFor = TransientAiException.class,
-    // maxAttempts = 3,
-    // backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000))
-    //
-    // 세 번 모두 실패했을 때 돌려줄 값은 @Recover 메서드에 적는다.
-    // @Recover 의 첫 인자는 예외, 나머지는 원래 메서드와 같은 인자여야 한다.
-    //
-    // @Recover
-    // public String recoverSummarize(TransientAiException e, String minutes) { ...
-    // }
-    //
-    // 확인) OPENAI_API_KEY 를 일부러 틀리게 넣고 호출해 본다.
-    // 재시도가 도는지, 그 뒤 어떤 응답이 나가는지 로그로 본다.
+    /**
+     * 세 번 모두 실패했을 때 돌려줄 값.
+     *
+     * @Recover 의 첫 인자는 예외, 나머지는 원래 메서드와 같은 인자여야 한다.
+     * 반환 타입도 원래 메서드와 같아야 짝이 맞는다.
+     */
+    @Recover
+    public String recoverSummarize(TransientAiException e, String minutes) {
+        log.warn("summarize 재시도 3회 소진: {}", e.getMessage());
+        return "요약을 만들지 못했다. 모델이 불안정하니 잠시 후 다시 시도한다.";
+    }
+
+    @Recover
+    public MeetingReport recoverReport(TransientAiException e, String minutes) {
+        log.warn("report 재시도 3회 소진: {}", e.getMessage());
+        return new MeetingReport(
+                "정리 실패",
+                "모델이 불안정해 회의록을 정리하지 못했다. 잠시 후 다시 시도한다.",
+                List.of(),
+                List.of());
+    }
 
 }

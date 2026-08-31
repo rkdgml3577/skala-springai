@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="STEP 3 · 스트리밍으로 내보낸다" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-08-31T07:22:10.836Z" hostname="choeganghuiui-MacBookPro.local" time="0.038">
-  <properties/>
-  <testcase name="조각으로_나뉘어_도착한다()" classname="com.skala.minutes.StepTests$STEP3" time="0.036"/>
-  <testcase name="스트리밍도_같은_프롬프트를_쓴다()" classname="com.skala.minutes.StepTests$STEP3" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

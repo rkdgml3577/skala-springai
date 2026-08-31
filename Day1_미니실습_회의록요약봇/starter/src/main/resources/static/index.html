@@ -40,11 +40,25 @@ async function stream() {
   });
   const reader = r.body.getReader();
   const dec = new TextDecoder();
+  let buf = '';        // 아직 줄바꿈을 못 만난 나머지
+  let ev = 'message';  // 지금 읽고 있는 이벤트 종류
   for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
-    for (const line of dec.decode(value).split('\n')) {
-      if (line.startsWith('data:')) out.textContent += line.slice(5);
+    // stream:true — 한글은 3바이트라 조각 경계에서 잘릴 수 있다.
+    // 이 옵션이 없으면 잘린 글자가 U+FFFD 로 깨진다.
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();   // 마지막 줄은 아직 안 끝났을 수 있으므로 남겨 둔다
+    for (const line of lines) {
+      if (line.startsWith('event:')) {
+        ev = line.slice(6);
+      } else if (line.startsWith('data:')) {
+        const data = line.slice(5);
+        if (ev === 'token') out.textContent += data;
+        else if (ev === 'done') out.textContent += '\n\n— 완료 —';
+        else if (ev === 'error') out.textContent += '\n\n— 오류: ' + data + ' —';
+      }
     }
   }
 }

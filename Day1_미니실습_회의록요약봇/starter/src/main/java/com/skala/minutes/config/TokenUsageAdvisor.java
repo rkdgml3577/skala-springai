@@ -34,10 +34,17 @@ public class TokenUsageAdvisor implements CallAdvisor, StreamAdvisor {
         return "tokenUsage";
     }
 
-    /** 체인의 맨 안쪽에 둔다 — 모델이 돌려준 응답을 가장 먼저 본다. */
+    /**
+     * 체인의 맨 안쪽에 둔다 — 모델이 돌려준 응답을 가장 먼저 본다.
+     *
+     * 다만 LOWEST_PRECEDENCE 를 그대로 쓰면 안 된다.
+     * 실제로 모델을 부르는 ChatModelCallAdvisor 가 같은 값(Integer.MAX_VALUE)이고,
+     * 그것은 chain.nextCall() 을 부르지 않는 종착점이다.
+     * 같은 순서로 두면 그 뒤로 밀려 아예 실행되지 않으므로 한 칸 앞에 세운다.
+     */
     @Override
     public int getOrder() {
-        return Ordered.LOWEST_PRECEDENCE;
+        return Ordered.LOWEST_PRECEDENCE - 1000;
     }
 
     // ── 한 번에 받는 호출 ──────────────────────────────────────────

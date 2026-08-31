@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="STEP 4 · 완료와 오류를 이벤트로 구분한다" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-31T07:22:10.825Z" hostname="choeganghuiui-MacBookPro.local" time="0.011">
-  <properties/>
-  <testcase name="도중에_끊기면_error_이벤트로_알린다()" classname="com.skala.minutes.StepTests$STEP4" time="0.008"/>
-  <testcase name="마지막에_done_이벤트가_한_번_나간다()" classname="com.skala.minutes.StepTests$STEP4" time="0.001"/>
-  <testcase name="조각_내용은_그대로_전달되고_done_으로_끝난다()" classname="com.skala.minutes.StepTests$STEP4" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
