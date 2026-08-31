@@ -1,0 +1,15 @@
+spring:
+  ai:
+    # Ollama 로컬 설정 (기본값)
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: qwen3.5:2b
+          
+    # OpenAI 설정 (선택, 환경변수로 관리한다)
+    openai:
+      api-key: ${OPENAI_API_KEY:} # 값이 없으면 빈 문자열
+      chat:
+        options:
+          model: gpt-4o-mini
