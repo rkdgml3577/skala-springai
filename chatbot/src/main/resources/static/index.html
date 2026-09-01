@@ -25,10 +25,15 @@
 </small></p>
 
 <div class="bar">
+  <label>사용자</label>
+  <input id="user" value="alice" size="6">
+  <input id="pw" type="password" value="alice-pw" size="9">
   <label>세션</label>
   <input id="sid" value="s1" size="10">
   <button onclick="newSession()">새 세션</button>
-  <button onclick="clearLog()">화면 지우기</button>
+  <button onclick="loadHistory()">이력 불러오기</button>
+  <button onclick="deleteSession()">세션 지우기</button>
+  <button onclick="listSessions()">세션 목록</button>
   <span style="flex:1"></span>
   <small id="quota"></small>
 </div>
@@ -36,7 +41,7 @@
 <div id="log"></div>
 
 <div class="ask">
-  <input id="msg" placeholder="물어본다" onkeydown="if(event.key==='Enter') send()">
+  <input id="msg" placeholder="물어본다" onkeydown="onEnter(event)">
   <button id="sendBtn" onclick="send()">보내기</button>
   <button id="stopBtn" onclick="stop()" disabled>중단</button>
 </div>
@@ -54,6 +59,29 @@ const sendBtn = document.getElementById('sendBtn');
 const stopBtn = document.getElementById('stopBtn');
 
 let controller = null;
+
+/**
+ * 한글은 마지막 글자가 아직 "조합 중" 인 상태로 입력창에 보인다.
+ * 그때 Enter 를 누르면 keydown 이 먼저 오고 조합 확정이 나중에 온다 —
+ * send() 가 입력창을 비운 뒤에 마지막 글자가 다시 들어와서, 다음 Enter 때 한 번 더 나간다.
+ * 영어로 치면 조합 단계가 없어서 이 문제가 안 보인다.
+ *
+ * isComposing 이 표준이고, keyCode 229 는 그것을 안 주는 옛 브라우저용 보험이다.
+ */
+function onEnter(event) {
+  if (event.key !== 'Enter') return;
+  if (event.isComposing || event.keyCode === 229) return;   // 아직 조합 중이다
+  send();
+}
+
+// HTTP Basic — fetch 는 401 을 받아도 브라우저 인증창을 띄우지 않는다.
+// 그래서 헤더를 직접 만들어 실어 보낸다.
+// btoa 는 라틴 문자만 다루므로 한글 비밀번호는 여기서 깨진다 (실습용이라 그대로 둔다).
+function authHeaders(extra) {
+  const token = btoa(document.getElementById('user').value + ':' +
+                     document.getElementById('pw').value);
+  return Object.assign({ 'Authorization': 'Basic ' + token }, extra || {});
+}
 
 function bubble(who, cls) {
   const div = document.createElement('div');
@@ -76,6 +104,42 @@ function newSession() {
 
 function clearLog() { log.textContent = ''; }
 
+// ── 이력 조회 ───────────────────────────────────────────────
+// 모델을 부르지 않는다. Redis 에 쌓인 것을 그대로 읽어 온다.
+// 새로고침하거나 다른 브라우저로 들어와도 대화가 그대로 있는지는 이걸로 확인한다.
+async function loadHistory() {
+  const id = sid.value;
+  const res = await fetch('/api/chat/sessions/' + encodeURIComponent(id), { headers: authHeaders() });
+  if (!res.ok) { bubble('— 인증 실패 (HTTP ' + res.status + ') —', 'sys'); return; }
+  const rows = await res.json();
+  clearLog();
+  if (!rows.length) {
+    bubble('— ' + id + ' 에 남아 있는 대화가 없다 —', 'sys');
+    return;
+  }
+  for (const r of rows) {
+    const isMe = r.role === 'user';
+    bubble(isMe ? ('나 · ' + id) : '챗봇', isMe ? 'me' : '').textContent = r.text;
+  }
+}
+
+async function listSessions() {
+  const res = await fetch('/api/chat/sessions', { headers: authHeaders() });
+  if (!res.ok) { bubble('— 인증 실패 (HTTP ' + res.status + ') —', 'sys'); return; }
+  const rows = await res.json();
+  const body = bubble('— 살아 있는 세션 —', 'sys');
+  body.textContent = rows.length
+    ? rows.map(r => `\n${r.sessionId}  (${r.messageCount}건)  ${r.lastMessage}`).join('')
+    : ' 없음';
+}
+
+async function deleteSession() {
+  const id = sid.value;
+  await fetch('/api/chat/sessions/' + encodeURIComponent(id),
+              { method: 'DELETE', headers: authHeaders() });
+  bubble('— ' + id + ' 의 대화를 지웠다. 다음 질문부터는 처음 만난 사이가 된다 —', 'sys');
+}
+
 async function refreshQuota() {
   try { quota.textContent = await (await fetch('/api/chat/ping')).text(); }
   catch { quota.textContent = ''; }
@@ -89,7 +153,7 @@ async function send() {
   const text = msg.value.trim();
   if (!text) return;
 
-  bubble('나 · ' + sid.value, 'me').textContent = text;
+  bubble(document.getElementById('user').value + ' · ' + sid.value, 'me').textContent = text;
   msg.value = '';
   sendBtn.disabled = true;
   stopBtn.disabled = false;
@@ -100,7 +164,7 @@ async function send() {
   try {
     const r = await fetch('/api/chat/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ sessionId: sid.value, message: text }),
       signal: controller.signal
     });

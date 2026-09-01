@@ -1,5 +1,6 @@
 package com.example.chatbot.service;
 
+import com.example.chatbot.domain.ChatSession;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
@@ -36,8 +37,10 @@ public class ChatService {
 
             return chatClient.prompt()
                     .user(message)
-                    // 이 한 줄이 대화를 가른다. 같은 sessionId 면 이전 맥락이 함께 실린다.
-                    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
+                    // 이 한 줄이 대화를 가른다. 같은 사용자의 같은 sessionId 면
+                    // 이전 맥락이 함께 실리고, 사용자가 다르면 키부터 달라진다.
+                    .advisors(a -> a.param(ChatMemory.CONVERSATION_ID,
+                            ChatSession.conversationId(userId, sessionId)))
                     .stream()
                     .content()
                     .doOnComplete(() -> {
