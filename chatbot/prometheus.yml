@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s        # 실습이므로 짧게 둔다. 운영은 15~60s 가 보통이다.
+
+scrape_configs:
+  - job_name: chatbot
+    metrics_path: /actuator/prometheus
+    static_configs:
+      # 컨테이너 이름으로 부른다. localhost 는 프로메테우스 자기 자신이다.
+      - targets: ['app:8080']

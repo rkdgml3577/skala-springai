@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    ports: ["8080:8080"]
+    environment:
+      # 키는 이미지에 굽지 않는다. 이미지가 유출되면 키도 함께 유출된다.
+      # 셸의 환경변수나 옆의 .env 파일에서 읽어 실행 시점에 주입한다.
+      #
+      # 값을 적지 않은 이 형태가 중요하다. 호스트에 키가 있으면 그대로 전달하고,
+      # 없으면 변수 자체를 넘기지 않는다.
+      # `OPENAI_API_KEY: ${OPENAI_API_KEY:-}` 로 쓰면 키가 없을 때 빈 문자열이 전달되는데,
+      # 스프링의 ${VAR:기본값} 은 변수가 "없을 때"만 기본값을 쓰므로 빈 값이 기본값을 이긴다.
+      # 그러면 키가 없다는 이유로 애플리케이션이 아예 뜨지 못한다.
+      - OPENAI_API_KEY
+
+      # 컨테이너 안에서 localhost 는 컨테이너 자신이다.
+      # 호스트에서 도는 Ollama 를 부르려면 이 이름으로 나가야 한다.
+      - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+      # openai | ollama — 자바 코드는 이 값을 모른다
+      - APP_PROVIDER=${APP_PROVIDER:-openai}
+    extra_hosts:
+      # 리눅스에는 host.docker.internal 이 기본으로 없다. 직접 만들어 준다.
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      app:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    ports: ["3000:3000"]
+    environment:
+      # 실습용이다. 운영이라면 이 두 줄을 그대로 두면 안 된다.
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    depends_on:
+      - prometheus
