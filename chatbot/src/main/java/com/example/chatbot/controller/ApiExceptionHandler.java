@@ -1,5 +1,7 @@
-package com.example.chatbot.web;
+package com.example.chatbot.controller;
 
+import com.example.chatbot.domain.ErrorResponse;
+import com.example.chatbot.service.QuotaExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.retry.NonTransientAiException;

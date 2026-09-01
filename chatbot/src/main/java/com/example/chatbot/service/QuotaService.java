@@ -1,6 +1,6 @@
 package com.example.chatbot.service;
 
-import com.example.chatbot.web.QuotaExceededException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

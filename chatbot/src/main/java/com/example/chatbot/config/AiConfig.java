@@ -3,6 +3,7 @@ package com.example.chatbot.config;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -35,13 +36,15 @@ public class AiConfig {
     /**
      * 대화 메모리.
      *
-     * 지금은 프로세스 안에만 있다 — 앱을 내리면 대화도 같이 사라지고,
-     * 인스턴스를 늘리면 사용자가 어느 쪽에 붙느냐에 따라 기억이 달라진다.
-     * 운영에서는 chatMemoryRepository() 자리에 Redis 구현체를 끼워 이 두 문제를 없앤다.
+     * 창(window)의 크기만 여기서 정하고, "어디에 담을지" 는 밖에서 받는다.
+     * 이 한 줄(chatMemoryRepository)이 인메모리와 Redis 를 가르는 전부다 —
+     * ChatService 도 컨트롤러도 저장소가 무엇인지 모른다.
      */
     @Bean
-    public ChatMemory chatMemory(@Value("${app.max-messages}") int maxMessages) {
+    public ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository,
+                                 @Value("${app.max-messages}") int maxMessages) {
         return MessageWindowChatMemory.builder()
+                .chatMemoryRepository(chatMemoryRepository)
                 .maxMessages(maxMessages)      // 최근 N 건만 유지한다
                 .build();
     }

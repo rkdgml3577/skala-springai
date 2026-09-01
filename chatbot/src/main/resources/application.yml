@@ -7,10 +7,18 @@ app:
   temperature: 0.7        # 대화는 요약과 달리 조금 풀어 둔다
   max-messages: 20        # 한 세션이 기억하는 최근 메시지 수
   daily-quota: 20         # 사용자 1명이 하루에 쓸 수 있는 요청 수
+  memory-ttl: 24h         # 방치된 세션이 Redis 에 영원히 쌓이지 않게 한다
 
 spring:
   application:
     name: chatbot
+
+  # 대화 이력을 둘 곳. 로컬에서 그냥 띄울 때는 docker compose up -d redis 로 먼저 켠다.
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+      timeout: 2s
 
   ai:
     # OpenAI — 키는 환경변수로만 받는다.
@@ -35,6 +43,9 @@ spring:
       chat:
         options:
           model: qwen3.5:2b
+          # qwen3.5 는 답하기 전에 속으로 길게 생각하는 모델이다.
+          # 기본 4096 으로는 생각하다가 자리를 다 써서 정작 답이 비어 나온다.
+          num-ctx: 8192
 
 management:
   endpoints:

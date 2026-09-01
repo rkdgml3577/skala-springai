@@ -19,6 +19,12 @@ services:
 
       # openai | ollama — 자바 코드는 이 값을 모른다
       - APP_PROVIDER=${APP_PROVIDER:-openai}
+
+      # 컨테이너끼리는 서비스 이름으로 서로를 부른다
+      - REDIS_HOST=redis
+    depends_on:
+      redis:
+        condition: service_healthy
     extra_hosts:
       # 리눅스에는 host.docker.internal 이 기본으로 없다. 직접 만들어 준다.
       - "host.docker.internal:host-gateway"
@@ -28,6 +34,20 @@ services:
       timeout: 3s
       retries: 10
       start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]     # 호스트에서 redis-cli 로 들여다보려고 연다
+    volumes:
+      # 이름 붙은 볼륨에 담는다. 컨테이너를 지워도 대화가 남는다.
+      - redis_data:/data
+    # 기본값은 메모리에만 두고 껐다 켜면 날린다. AOF 를 켜야 실제로 살아남는다.
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   prometheus:
     image: prom/prometheus:v3.1.0
@@ -47,3 +67,6 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
     depends_on:
       - prometheus
+
+volumes:
+  redis_data:
